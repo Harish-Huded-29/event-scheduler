@@ -1,0 +1,15 @@
+{
+  "appId": "com.immortal.eventscheduler",
+  "appName": "Event Scheduler",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_notification",
+      "iconColor": "#C5A059",
+      "sound": "beep.wav"
+    }
+  }
+}
