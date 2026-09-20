@@ -1,29 +1,13 @@
 import React from 'react';
 
-export default function FloatingActionButton({ activeTab, onOpenModal }) {
-  const handleClick = () => {
-    if (activeTab === 'schedule') {
-      onOpenModal('add-schedule');
-    } else if (activeTab === 'tasks') {
-      onOpenModal('add-task');
-    } else if (activeTab === 'events') {
-      onOpenModal('add-event');
-    }
-  };
-
-  const getAriaLabel = () => {
-    if (activeTab === 'schedule') return 'Add Schedule Entry';
-    if (activeTab === 'tasks') return 'Add Task';
-    return 'Add Event';
-  };
-
+export default function FloatingActionButton({ onOpenModal }) {
   return (
     <div className="fab-container">
       <button
         type="button"
         className="fab-main"
-        onClick={handleClick}
-        aria-label={getAriaLabel()}
+        onClick={() => onOpenModal('add-event')}
+        aria-label="Create New Event"
       >
         <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <line x1="12" y1="5" x2="12" y2="19"></line>

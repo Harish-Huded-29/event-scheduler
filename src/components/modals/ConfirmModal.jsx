@@ -4,8 +4,8 @@ export default function ConfirmModal({ isOpen, title, message, onConfirm, onClos
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay active" role="dialog" aria-modal="true">
-      <div className="modal-dialog modal-confirm-dialog" style={{ maxWidth: '360px' }}>
+    <div className="modal-overlay active modal-center-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="modal-dialog modal-confirm-dialog" style={{ maxWidth: '360px' }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h2 className="modal-title">{title || 'Confirm Action'}</h2>
           <button type="button" className="btn-close-modal" onClick={onClose} aria-label="Close">

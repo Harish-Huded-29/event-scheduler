@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { backButtonManager } from '../../utils/backButtonManager.js';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -17,10 +18,25 @@ export default function CustomDatePicker({
   const [viewMonth, setViewMonth] = useState(new Date().getMonth());
   const [selectedDate, setSelectedDate] = useState('');
   const [viewMode, setViewMode] = useState('days'); // 'days', 'months', 'years'
+  const [slideDirection, setSlideDirection] = useState(''); // 'slide-left' or 'slide-right'
+
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
+
+  // Register high-priority Back button handler so pressing Android Back closes DatePicker without closing Create/Edit Event
+  useEffect(() => {
+    if (isOpen && onClose) {
+      const unregister = backButtonManager.register(() => {
+        onClose();
+      }, 90);
+      return () => unregister();
+    }
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (isOpen) {
       setViewMode('days');
+      setSlideDirection('');
       if (initialDate && /^\d{4}-\d{2}-\d{2}$/.test(initialDate)) {
         setSelectedDate(initialDate);
         const parts = initialDate.split('-');
@@ -39,32 +55,68 @@ export default function CustomDatePicker({
   if (!isOpen) return null;
 
   const handlePrev = () => {
+    setSlideDirection('slide-right');
+    setTimeout(() => setSlideDirection(''), 220);
+
     if (viewMode === 'days') {
       if (viewMonth === 0) {
         setViewMonth(11);
-        setViewYear(viewYear - 1);
+        setViewYear((y) => y - 1);
       } else {
-        setViewMonth(viewMonth - 1);
+        setViewMonth((m) => m - 1);
       }
     } else if (viewMode === 'months') {
-      setViewYear(viewYear - 1);
+      setViewYear((y) => y - 1);
     } else if (viewMode === 'years') {
-      setViewYear(viewYear - 12);
+      setViewYear((y) => y - 12);
     }
   };
 
   const handleNext = () => {
+    setSlideDirection('slide-left');
+    setTimeout(() => setSlideDirection(''), 220);
+
     if (viewMode === 'days') {
       if (viewMonth === 11) {
         setViewMonth(0);
-        setViewYear(viewYear + 1);
+        setViewYear((y) => y + 1);
       } else {
-        setViewMonth(viewMonth + 1);
+        setViewMonth((m) => m + 1);
       }
     } else if (viewMode === 'months') {
-      setViewYear(viewYear + 1);
+      setViewYear((y) => y + 1);
     } else if (viewMode === 'years') {
-      setViewYear(viewYear + 12);
+      setViewYear((y) => y + 12);
+    }
+  };
+
+  // Touch Swipe Handlers for smooth finger sliding between months
+  const handleTouchStart = (e) => {
+    if (e.touches && e.touches.length === 1) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchStartYRef.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    if (!e.changedTouches || e.changedTouches.length === 0) return;
+
+    const diffX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const diffY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+
+    // Only trigger if horizontal swipe is dominant and exceeds threshold (40px)
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.3) {
+      if (diffX < 0) {
+        // Finger moved right to left -> Next Month
+        handleNext();
+      } else {
+        // Finger moved left to right -> Previous Month
+        handlePrev();
+      }
     }
   };
 
@@ -104,10 +156,11 @@ export default function CustomDatePicker({
             borderRadius: '8px',
             cursor: 'pointer',
             fontSize: '0.95rem',
-            fontWeight: isSelected ? 700 : 500,
-            backgroundColor: isSelected ? 'rgba(197, 160, 89, 0.25)' : 'transparent',
-            border: isSelected ? '1px solid var(--accent-gold)' : isToday ? '1px solid #3f3f46' : 'none',
-            color: isSelected ? 'var(--accent-gold)' : '#ffffff'
+            fontWeight: isSelected ? 800 : 500,
+            backgroundColor: isSelected ? '#ffffff' : 'transparent',
+            border: isSelected ? '1px solid #ffffff' : isToday ? '1px solid rgba(255, 255, 255, 0.35)' : 'none',
+            color: isSelected ? '#000000' : '#ffffff',
+            boxShadow: isSelected ? '0 2px 8px rgba(255, 255, 255, 0.25)' : 'none'
           }}
           onClick={() => {
             setSelectedDate(iso);
@@ -126,32 +179,43 @@ export default function CustomDatePicker({
   const yearsList = Array.from({ length: 12 }, (_, i) => viewYear - 5 + i);
 
   return (
-    <div className="modal-overlay modal-overlay-centered active" role="dialog" aria-modal="true" style={{ zIndex: 300 }}>
+    <div
+      className="modal-overlay modal-overlay-centered active"
+      role="dialog"
+      aria-modal="true"
+      style={{ zIndex: 300 }}
+      onClick={onClose}
+    >
       <div
         className="modal-dialog calendar-picker-card"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={(e) => e.stopPropagation()}
         style={{
-          backgroundColor: '#18181b',
+          backgroundColor: '#0d0d10',
           borderRadius: '16px',
           maxWidth: '360px',
           width: '92%',
           padding: '16px',
-          border: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.85)'
+          border: '1px solid rgba(255,255,255,0.16)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.95)',
+          userSelect: 'none',
+          touchAction: 'pan-y'
         }}
       >
-        {/* Top Nav Bar (Matches Screenshot: < [Month] [Year] > with visible arrows) */}
+        {/* Top Nav Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
           {/* Back / Previous Button */}
           <button
             type="button"
             className="cal-nav-btn"
             onClick={handlePrev}
-            aria-label="Previous"
+            aria-label="Previous Month"
             style={{
               width: '38px',
               height: '38px',
               borderRadius: '8px',
-              backgroundColor: '#27272a',
+              backgroundColor: '#181820',
               border: '1px solid rgba(255,255,255,0.15)',
               color: '#ffffff',
               display: 'flex',
@@ -171,13 +235,13 @@ export default function CustomDatePicker({
               type="button"
               onClick={() => setViewMode(viewMode === 'months' ? 'days' : 'months')}
               style={{
-                backgroundColor: viewMode === 'months' ? 'var(--accent-gold)' : '#27272a',
-                color: viewMode === 'months' ? '#121212' : '#ffffff',
-                border: '1px solid rgba(255,255,255,0.1)',
+                backgroundColor: viewMode === 'months' ? '#ffffff' : '#181820',
+                color: viewMode === 'months' ? '#000000' : '#ffffff',
+                border: '1px solid rgba(255,255,255,0.15)',
                 borderRadius: '9999px',
                 padding: '7px 18px',
                 fontSize: '0.92rem',
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
                 transition: 'all 0.15s'
               }}
@@ -189,13 +253,13 @@ export default function CustomDatePicker({
               type="button"
               onClick={() => setViewMode(viewMode === 'years' ? 'days' : 'years')}
               style={{
-                backgroundColor: viewMode === 'years' ? 'var(--accent-gold)' : '#27272a',
-                color: viewMode === 'years' ? '#121212' : '#ffffff',
-                border: '1px solid rgba(255,255,255,0.1)',
+                backgroundColor: viewMode === 'years' ? '#ffffff' : '#181820',
+                color: viewMode === 'years' ? '#000000' : '#ffffff',
+                border: '1px solid rgba(255,255,255,0.15)',
                 borderRadius: '9999px',
                 padding: '7px 18px',
                 fontSize: '0.92rem',
-                fontWeight: 700,
+                fontWeight: 800,
                 cursor: 'pointer',
                 transition: 'all 0.15s'
               }}
@@ -209,12 +273,12 @@ export default function CustomDatePicker({
             type="button"
             className="cal-nav-btn"
             onClick={handleNext}
-            aria-label="Next"
+            aria-label="Next Month"
             style={{
               width: '38px',
               height: '38px',
               borderRadius: '8px',
-              backgroundColor: '#27272a',
+              backgroundColor: '#181820',
               border: '1px solid rgba(255,255,255,0.15)',
               color: '#ffffff',
               display: 'flex',
@@ -229,9 +293,9 @@ export default function CustomDatePicker({
           </button>
         </div>
 
-        {/* Days View */}
+        {/* Days View with Gesture Slider Wrapper */}
         {viewMode === 'days' && (
-          <>
+          <div className={slideDirection} style={{ transition: 'transform 0.2s ease, opacity 0.2s ease' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', color: '#a1a1aa', fontSize: '0.78rem', fontWeight: 700, marginBottom: '10px' }}>
               {DAY_LABELS.map((lbl) => (
                 <div key={lbl}>{lbl}</div>
@@ -240,13 +304,13 @@ export default function CustomDatePicker({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' }}>
               {renderDaysGrid()}
             </div>
-          </>
+          </div>
         )}
 
         {/* Month Picker Grid */}
         {viewMode === 'months' && (
           <div>
-            <div style={{ textAlign: 'center', color: 'var(--accent-gold)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '10px' }}>
+            <div style={{ textAlign: 'center', color: '#ffffff', fontSize: '0.85rem', fontWeight: 700, marginBottom: '10px' }}>
               Select Month ({viewYear})
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', padding: '4px 0' }}>
@@ -259,12 +323,12 @@ export default function CustomDatePicker({
                     setViewMode('days');
                   }}
                   style={{
-                    backgroundColor: viewMonth === idx ? 'var(--accent-gold)' : '#27272a',
-                    color: viewMonth === idx ? '#121212' : '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    backgroundColor: viewMonth === idx ? '#ffffff' : '#181820',
+                    color: viewMonth === idx ? '#000000' : '#ffffff',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '8px',
                     padding: '12px 0',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     fontSize: '0.9rem',
                     cursor: 'pointer',
                     transition: 'all 0.15s'
@@ -280,7 +344,7 @@ export default function CustomDatePicker({
         {/* Year Picker Grid */}
         {viewMode === 'years' && (
           <div>
-            <div style={{ textAlign: 'center', color: 'var(--accent-gold)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '10px' }}>
+            <div style={{ textAlign: 'center', color: '#ffffff', fontSize: '0.85rem', fontWeight: 700, marginBottom: '10px' }}>
               Select Year
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', padding: '4px 0' }}>
@@ -293,12 +357,12 @@ export default function CustomDatePicker({
                     setViewMode('days');
                   }}
                   style={{
-                    backgroundColor: viewYear === yr ? 'var(--accent-gold)' : '#27272a',
-                    color: viewYear === yr ? '#121212' : '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    backgroundColor: viewYear === yr ? '#ffffff' : '#181820',
+                    color: viewYear === yr ? '#000000' : '#ffffff',
+                    border: '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '8px',
                     padding: '12px 0',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     fontSize: '0.9rem',
                     cursor: 'pointer',
                     transition: 'all 0.15s'

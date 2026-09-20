@@ -1,19 +1,22 @@
 /* =========================================================================
-   Gold & Onyx Dark Luxury Theme Tokens
+   Pure Monochromatic Black & White Obsidian Theme Tokens
    ========================================================================= */
 
 :root {
-  --bg-primary: #0d0d0f;
-  --bg-secondary: #141418;
-  --bg-card: #1c1c22;
-  --bg-card-hover: #24242c;
-  --bg-modal: #18181f;
-  --bg-input: #121216;
+  --bg-primary: #000000;
+  --bg-secondary: #09090b;
+  --bg-card: #121216;
+  --bg-card-hover: #181820;
+  --bg-modal: #0d0d10;
+  --bg-input: #08080a;
 
-  --accent-gold: #c5a059;
-  --accent-gold-light: #dfbe7a;
-  --accent-gold-glow: rgba(197, 160, 89, 0.28);
-  --accent-gold-subtle: rgba(197, 160, 89, 0.12);
+  --accent-gold: #ffffff;
+  --accent-gold-light: #ffffff;
+  --accent-gold-glow: rgba(255, 255, 255, 0.22);
+  --accent-gold-subtle: rgba(255, 255, 255, 0.08);
+
+  --accent-white: #ffffff;
+  --accent-glow: rgba(255, 255, 255, 0.2);
 
   --accent-sage: #6aa876;
   --accent-sage-subtle: rgba(106, 168, 118, 0.15);
@@ -21,29 +24,30 @@
   --accent-danger-subtle: rgba(224, 108, 117, 0.15);
   --accent-blue: #61afef;
 
-  --text-primary: #f5f5f7;
-  --text-secondary: #a0a0aa;
-  --text-muted: #666672;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
 
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-focus: var(--accent-gold);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-medium: rgba(255, 255, 255, 0.18);
+  --border-focus: #ffffff;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
   --radius-full: 9999px;
 
-  --font-heading: 'Outfit', sans-serif;
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.7);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.85);
   --shadow-glow: 0 0 20px var(--accent-gold-glow);
 
   --transition-fast: 0.15s ease;
-  --transition-norm: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-norm: 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 *, *::before, *::after {
@@ -58,7 +62,6 @@ body {
   font-family: var(--font-body);
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
